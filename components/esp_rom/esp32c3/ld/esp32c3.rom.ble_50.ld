@@ -65,7 +65,7 @@ f_lld_per_adv_rep_ind_handler = 0;
 r_lld_sync_init = 0;
 
 /* phy update*/
-r_phy_upd_proc_start = 0;
+/* r_phy_upd_proc_start = 0; */
 f_llc_op_phy_upd_ind_handler = 0;
 f_ll_phy_req_handler = 0;
 f_ll_phy_rsp_handler = 0;
@@ -73,3 +73,17 @@ f_ll_phy_update_ind_handler = 0;
 f_lld_phy_upd_cfm_handler = 0;
 f_hci_le_set_phy_cmd_handler = 0;
 llc_llcp_phy_update_ind_ack = 0;
+
+hci_le_set_ext_scan_rsp_data_cmd_handler = 0;
+hci_le_set_ext_adv_en_cmd_handler = 0;
+hci_le_set_ext_adv_param_cmd_handler = 0;
+hci_le_set_ext_adv_data_cmd_handler = 0;
+/* llm_ext_adv_get_own_addr = 0; */
+r_lld_ext_adv_dynamic_aux_pti_process_eco = 0;
+hci_le_set_ext_adv_data_cmd_handler = 0;
+hci_le_set_ext_scan_en_cmd_handler = 0;
+/* r_lld_ext_scan_dynamic_pti_process_eco = 0; */
+hci_le_set_ext_scan_param_cmd_handler = 0;
+r_lld_ext_scan_dynamic_pti_reset = 0;
+ble_hs_hci_evt_le_ext_adv_rpt = 0;
+r_lld_adv_ext_pkt_prepare_set = 0;
