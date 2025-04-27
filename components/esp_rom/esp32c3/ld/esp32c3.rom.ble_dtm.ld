@@ -19,4 +19,4 @@ f_hci_le_tx_test_cmd_handler = 0;
 f_hci_le_enh_rx_test_cmd_handler = 0;
 f_hci_le_enh_tx_test_cmd_handler = 0;
 f_hci_le_test_end_cmd_handler = 0;
-r_lld_test_init = 0;
+/* r_lld_test_init = 0; */

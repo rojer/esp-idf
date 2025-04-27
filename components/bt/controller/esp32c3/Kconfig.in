@@ -530,27 +530,22 @@ config BT_CTRL_RUN_IN_FLASH_ONLY
         impact on Bluetooth performance.
 
 config BT_CTRL_DTM_ENABLE
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable direct test mode feature"
     default n
 
 config BT_CTRL_BLE_MASTER
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable BLE master role feature"
     default y
 
 config BT_CTRL_BLE_TEST
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable BLE QA test feature"
     default n
 
 config BT_CTRL_BLE_SCAN
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable BLE scan feature"
     default y
 
 config BT_CTRL_BLE_SECURITY_ENABLE
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY && BT_CONTROLLER_ONLY
     bool "Enable BLE security feature"
     default y
 
