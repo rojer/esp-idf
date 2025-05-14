@@ -1942,6 +1942,8 @@ esp_err_t esp_bt_controller_disable(void)
     esp_pm_lock_release(s_pm_lock);
 #endif
 
+    // s_time_phy_rf_just_enabled = 0;
+
     return ESP_OK;
 }
 

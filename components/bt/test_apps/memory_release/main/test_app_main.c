@@ -12,6 +12,7 @@
 
 #include "multi_heap.h"
 #include "esp_heap_caps.h"
+#include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -33,6 +34,68 @@ extern void ble_store_config_init(void);
 
 static const char *tag = "MEM_RELEASE_APP";
 
+static void
+bleprph_advertise(void)
+{
+    struct ble_gap_adv_params adv_params;
+    struct ble_hs_adv_fields fields;
+    const char *name;
+    int rc;
+
+    /**
+     *  Set the advertisement data included in our advertisements:
+     *     o Flags (indicates advertisement type and other general info).
+     *     o Advertising tx power.
+     *     o Device name.
+     *     o 16-bit service UUIDs (alert notifications).
+     */
+
+    memset(&fields, 0, sizeof fields);
+
+    /* Advertise two flags:
+     *     o Discoverability in forthcoming advertisement (general)
+     *     o BLE-only (BR/EDR unsupported).
+     */
+    fields.flags = BLE_HS_ADV_F_DISC_GEN |
+                   BLE_HS_ADV_F_BREDR_UNSUP;
+
+    /* Indicate that the TX power level field should be included; have the
+     * stack fill this value automatically.  This is done by assigning the
+     * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
+     */
+    fields.tx_pwr_lvl_is_present = 1;
+    fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+
+    name = ble_svc_gap_device_name();
+    fields.name = (uint8_t *)name;
+    fields.name_len = strlen(name);
+    fields.name_is_complete = 1;
+
+    rc = ble_gap_adv_set_fields(&fields);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error setting advertisement data; rc=%d\n", rc);
+        return;
+    }
+
+    uint8_t own_addr_type = 0;
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+        return;
+    }
+
+    /* Begin advertising. */
+    memset(&adv_params, 0, sizeof adv_params);
+    adv_params.conn_mode = BLE_GAP_CONN_MODE_UND;
+    adv_params.disc_mode = BLE_GAP_DISC_MODE_GEN;
+    rc = ble_gap_adv_start(own_addr_type, NULL, BLE_HS_FOREVER,
+                           &adv_params, NULL, NULL);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error enabling advertisement; rc=%d\n", rc);
+        return;
+    }
+}
+
 static void nimble_host_on_reset(int reason)
 {
     ESP_LOGI(tag, "Resetting state; reason=%d", reason);
@@ -41,6 +104,7 @@ static void nimble_host_on_reset(int reason)
 static void nimble_host_on_sync(void)
 {
     ESP_LOGI(tag, "NimBLE host synchronized");
+    bleprph_advertise();
 }
 
 static void nimble_host_task_fn(void *param)
@@ -81,9 +145,42 @@ static void bt_stack_deinit(void)
     ESP_LOGI(tag, "BLE Host Task Stopped");
 }
 
+/* Initialize soft AP */
+void wifi_init_softap(void)
+{
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+
+    esp_netif_create_default_wifi_ap();
+
+    wifi_config_t wifi_ap_config = {
+        .ap = {
+            .ssid = "test_ap",
+            .ssid_len = 7,
+            .channel = 10,
+            .password = "test_pass",
+            .max_connection = 5,
+            .authmode = WIFI_AUTH_WPA2_PSK,
+            .pmf_cfg = {
+                .required = false,
+            },
+        },
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
+
+    ESP_ERROR_CHECK(esp_wifi_start());
+}
+
 void app_main(void)
 {
     esp_err_t ret = ESP_OK;
+
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* Initialize NVS — it is used to store PHY calibration data */
     ret = nvs_flash_init();
@@ -93,13 +190,23 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+    if (1) {
+        wifi_init_softap();
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+
     /* initialize and then deinitialize bluetooth stack */
     bt_stack_init();
 
-    vTaskDelay(pdMS_TO_TICKS(200));
+    vTaskDelay(pdMS_TO_TICKS(5000));
 
     bt_stack_deinit();
 
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    bt_stack_init();
+
+#if 0
     /* Get the size of heap located in external RAM */
     const uint32_t free_before = heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
     ESP_LOGI(tag, "Free size in external RAM heap: %"PRIu32, free_before);
@@ -131,4 +238,5 @@ void app_main(void)
     if (heap_caps_check_integrity_all(true)) {
         ESP_LOGI(tag, "Comprehensive heap check: SUCCESS");
     }
+#endif
 }
